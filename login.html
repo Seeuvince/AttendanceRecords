@@ -1,0 +1,38 @@
+<?php date_default_timezone_set('Asia/Manila'); // Set to your preferred time zone
+    require_once 'admin/connect.php';
+
+    if (isset($_POST['student'])) {
+        $student = $_POST['student'];
+        $time = date("H:i");
+        $date = date("Y-m-d");
+
+        // Fetch student details
+        $stmt_student = $conn->prepare("SELECT * FROM student WHERE student_no = ?");
+        $stmt_student->bind_param("s", $student);
+        $stmt_student->execute();
+        $result_student = $stmt_student->get_result();
+
+        if ($result_student->num_rows > 0) {
+            $f_student = $result_student->fetch_array();
+            $student_name = $f_student['firstname']." ".$f_student['lastname'];
+
+            // Insert into time table
+            $stmt_time = $conn->prepare("INSERT INTO time (student_no, student_name, time, date) VALUES (?, ?, ?, ?)");
+            $stmt_time->bind_param("ssss", $student, $student_name, $time, $date);
+
+            if ($stmt_time->execute()) {
+                echo "<h3 class='text-muted'>".$student_name." <label class='text-info'>at ".date("h:i a", strtotime($time))."</label></h3>";
+            } else {
+                die('Error: ' . $conn->error);
+            }
+
+            $stmt_time->close();
+        } else {
+            echo "<h3 class='text-muted'>Student not found</h3>";
+        }
+
+        $stmt_student->close();
+    } else {
+        echo "<h3 class='text-muted'>No student data provided</h3>";
+    }
+?>
